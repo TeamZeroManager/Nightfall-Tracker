@@ -14,6 +14,8 @@ import java.util.Map;
 
 public class BossRegistrySavedData extends SavedData {
     private static final String DATA_NAME = "nightfall_tracker_bestiary";
+    // Temporary testing switch: set to false after the animation has been approved.
+    private static final boolean ANIMATE_EVERY_DEFEAT_FOR_TESTING = true;
     private final Map<ResourceLocation, BossRecord> bosses = new LinkedHashMap<>();
 
     public static BossRegistrySavedData get(ServerLevel level) {
@@ -74,7 +76,12 @@ public class BossRegistrySavedData extends SavedData {
         boolean changed = !record.discovered || firstDefeat;
         record.discovered = true;
         record.defeated = true;
-        if (firstDefeat) record.pendingDefeatAnimation = true;
+
+        boolean shouldAnimate = firstDefeat || ANIMATE_EVERY_DEFEAT_FOR_TESTING;
+        if (shouldAnimate && !record.pendingDefeatAnimation) {
+            record.pendingDefeatAnimation = true;
+            changed = true;
+        }
         if (changed) setDirty();
     }
 
