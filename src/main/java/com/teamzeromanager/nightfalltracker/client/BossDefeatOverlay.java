@@ -134,59 +134,57 @@ public final class BossDefeatOverlay {
         float progress = completed == CUT_COUNT ? 1.0F
             : Mth.clamp((cutElapsed - active * CUT_DURATION) / (float) CUT_DURATION, 0.0F, 1.0F);
 
-        // Draw the four real strips from the boss-name glyphs. Each completed
-        // sword stroke opens a gap between adjacent strips.
+        // Each strip is clipped from the original rendered glyphs. The clip
+        // rectangle follows the strip, so the letters themselves visibly split.
         for (int part = 0; part < FRAGMENT_COUNT; part++) {
-            int cutsAffectingPart = Math.min(part, completed);
-            float gap = Math.max(0, completed - 0.5F) * 1.6F;
-            float verticalOffset = (part - 1.5F) * gap;
+            float verticalOffset = 0.0F;
+            for (int cut = 0; cut < CUT_COUNT; cut++) {
+                float amount = cut < completed ? 4.5F
+                    : (cut == active ? 4.5F * progress : 0.0F);
+                if (part <= cut) verticalOffset -= amount;
+                else verticalOffset += amount;
+            }
             float horizontalOffset = (part % 2 == 0 ? -1.0F : 1.0F)
-                * cutsAffectingPart * 1.3F;
-
-            graphics.enableScissor(textLeft - 2,
-                nameTop + part * FRAGMENT_HEIGHT,
-                textLeft + cachedTextWidth + 2,
-                nameTop + (part + 1) * FRAGMENT_HEIGHT);
-            graphics.pose().pushPose();
-            graphics.pose().translate(horizontalOffset, verticalOffset, 0);
-            graphics.drawCenteredString(minecraft.font, bossName, centerX, nameTop, WHITE);
-            graphics.pose().popPose();
+                * Math.min(5.0F, Math.max(0, completed + progress) * 0.8F);
+            int clipLeft = Math.round(textLeft + horizontalOffset - 2);
+            int clipTop = Math.round(nameTop + part * FRAGMENT_HEIGHT + verticalOffset);
+            int clipRight = Math.round(textLeft + cachedTextWidth + horizontalOffset + 2);
+            graphics.enableScissor(clipLeft, clipTop, clipRight, clipTop + FRAGMENT_HEIGHT);
+            graphics.drawCenteredString(minecraft.font, bossName,
+                Math.round(centerX + horizontalOffset),
+                Math.round(nameTop + verticalOffset), WHITE);
             graphics.disableScissor();
         }
 
         if (completed < CUT_COUNT) {
             if (active != lastSoundedCut) {
                 minecraft.player.playSound(SoundEvents.PLAYER_ATTACK_SWEEP,
-                    0.9F, 0.78F + active * 0.12F);
+                    0.82F, 0.82F + active * 0.12F);
                 lastSoundedCut = active;
             }
             if (progress >= 0.78F && active != lastImpactCut) {
                 minecraft.player.playSound(SoundEvents.PLAYER_ATTACK_CRIT,
-                    0.72F, 0.9F + active * 0.05F);
+                    0.68F, 0.92F + active * 0.05F);
                 lastImpactCut = active;
             }
 
-            // A sharp diagonal blade crosses the name exactly at the next cut.
+            // A single bright blade stroke sweeps across the next cut line.
             float sweep = Mth.clamp(progress, 0.0F, 1.0F);
-            float x = textLeft - 28 + (cachedTextWidth + 56) * sweep;
+            float x = textLeft - 30 + (cachedTextWidth + 60) * sweep;
             float y = nameTop + (active + 1) * FRAGMENT_HEIGHT;
             graphics.pose().pushPose();
             graphics.pose().translate(x, y, 0);
-            graphics.pose().mulPose(Axis.ZP.rotationDegrees(-28.0F));
-            int glow = (int) (100 + 130 * Math.sin(sweep * Math.PI));
-            graphics.fill(-23, -3, 23, 3, (glow << 24) | 0x00FF334F);
-            graphics.fill(-21, -1, 21, 1, 0xFFF9F7F0);
-            graphics.fill(-24, -2, -19, 2, 0xFFFF5364);
+            graphics.pose().mulPose(Axis.ZP.rotationDegrees(-24.0F));
+            int glow = (int) (95 + 145 * Math.sin(sweep * Math.PI));
+            graphics.fill(-27, -4, 27, 4, (glow << 24) | 0x00FF354F);
+            graphics.fill(-25, -1, 25, 1, 0xFFF8F4E9);
+            graphics.fill(-29, -2, -24, 2, 0xFFFF5364);
             graphics.pose().popPose();
-
-            int sparkAlpha = (int) (220 * (1.0F - Math.abs(0.5F - sweep) * 2.0F));
-            int spark = (sparkAlpha << 24) | 0x00FFE4A0;
-            graphics.fill((int) x - 3, (int) y - 5, (int) x + 3, (int) y + 5, spark);
         }
 
         for (int cut = 0; cut < completed; cut++) {
             int seamY = nameTop + (cut + 1) * FRAGMENT_HEIGHT;
-            graphics.fill(textLeft, seamY, textLeft + cachedTextWidth, seamY + 1, RED);
+            graphics.fill(textLeft, seamY, textLeft + cachedTextWidth, seamY + 1, 0xCCFF5364);
         }
     }
 
@@ -196,33 +194,31 @@ public final class BossDefeatOverlay {
             / (float) (ANIMATION_END - SHATTER_START), 0.0F, 1.0F);
         float eased = progress * progress * (3.0F - 2.0F * progress);
 
+        // Keep the same four real glyph slices from the cutting sequence.
+        // No per-character rendering or rotation matrices are needed here.
         for (int part = 0; part < FRAGMENT_COUNT; part++) {
             float direction = part < 2 ? -1.0F : 1.0F;
             float side = part - 1.5F;
-            float dx = direction * (24.0F + part * 8.0F) * eased;
-            float dy = side * 20.0F * eased + 105.0F * eased * eased;
-            float rotation = direction * (18.0F + part * 9.0F) * eased;
-            int alpha = 255 - (int) (255 * Mth.clamp((progress - 0.55F) / 0.45F, 0, 1));
+            float dx = direction * (18.0F + Math.abs(side) * 10.0F) * eased;
+            float dy = side * 13.0F * eased + 82.0F * eased * eased;
+            int alpha = 255 - (int) (255 * Mth.clamp((progress - 0.48F) / 0.52F, 0, 1));
 
-            graphics.enableScissor(textLeft - 2,
-                nameTop + part * FRAGMENT_HEIGHT,
-                textLeft + cachedTextWidth + 2,
-                nameTop + (part + 1) * FRAGMENT_HEIGHT);
-            graphics.pose().pushPose();
-            graphics.pose().translate(centerX + dx, nameTop + 5 + dy, 0);
-            graphics.pose().mulPose(Axis.ZP.rotationDegrees(rotation));
-            graphics.pose().translate(-centerX, -(nameTop + 5), 0);
-            graphics.drawCenteredString(minecraft.font, bossName, centerX, nameTop,
+            int clipLeft = Math.round(textLeft + dx - 2);
+            int clipTop = Math.round(nameTop + part * FRAGMENT_HEIGHT + dy);
+            int clipRight = Math.round(textLeft + cachedTextWidth + dx + 2);
+            graphics.enableScissor(clipLeft, clipTop, clipRight, clipTop + FRAGMENT_HEIGHT);
+            graphics.drawCenteredString(minecraft.font, bossName,
+                Math.round(centerX + dx), Math.round(nameTop + dy),
                 (alpha << 24) | 0x00F4F7FA);
-            graphics.pose().popPose();
             graphics.disableScissor();
         }
 
-        int flashAlpha = (int) (55 * (1.0F - progress));
+        int flashAlpha = (int) (38 * (1.0F - progress));
         if (flashAlpha > 0) {
             graphics.fill(0, 0, minecraft.getWindow().getGuiScaledWidth(),
                 minecraft.getWindow().getGuiScaledHeight(),
                 (flashAlpha << 24) | 0x00D8F4F2);
         }
     }
+
 }
