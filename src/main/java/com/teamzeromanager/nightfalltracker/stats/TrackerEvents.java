@@ -3,9 +3,8 @@ package com.teamzeromanager.nightfalltracker.stats;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
-import net.minecraft.world.entity.boss.wither.WitherBoss;
 import net.minecraft.world.entity.monster.warden.Warden;
+import net.minecraftforge.common.Tags;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -19,9 +18,10 @@ public final class TrackerEvents {
         if (!(event.getEntity().level() instanceof ServerLevel level)) return;
 
         Entity killer = event.getSource().getEntity();
-        boolean boss = killer instanceof EnderDragon
-            || killer instanceof WitherBoss
-            || killer instanceof Warden;
+        boolean boss = killer != null && (
+            killer.getType().is(Tags.EntityTypes.BOSSES)
+            || killer instanceof Warden
+        );
 
         TrackerSavedData.get(level).recordDeath(boss);
     }
