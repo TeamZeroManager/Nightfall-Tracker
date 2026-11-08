@@ -75,17 +75,6 @@ public class BossRegistrySavedData extends SavedData {
         if (changed) setDirty();
     }
 
-    public ResourceLocation consumePendingDefeatAnimation() {
-        for (BossRecord record : bosses.values()) {
-            if (record.pendingDefeatAnimation) {
-                record.pendingDefeatAnimation = false;
-                setDirty();
-                return record.id;
-            }
-        }
-        return null;
-    }
-
     public Map<ResourceLocation, BossRecord> getBosses() {
         return Collections.unmodifiableMap(bosses);
     }
