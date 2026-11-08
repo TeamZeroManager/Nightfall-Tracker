@@ -162,9 +162,10 @@ public final class BossDefeatOverlay {
             graphics.pose().mulPose(Axis.ZP.rotationDegrees(angle));
             int whiteAlpha = (int) (245 * slashProgress);
             int redAlpha = (int) (205 * slashProgress);
-            graphics.fill(-1, -length / 2.0F > Integer.MAX_VALUE ? 0 : (int) (-length / 2.0F),
-                2, (int) (length / 2.0F), (whiteAlpha << 24) | 0x00FFFFFF);
-            graphics.fill(2, (int) (-length / 2.0F), 5, (int) (length / 2.0F),
+            int halfLength = (int) (length / 2.0F);
+            graphics.fill(-1, -halfLength, 2, halfLength,
+                (whiteAlpha << 24) | 0x00FFFFFF);
+            graphics.fill(2, -halfLength, 5, halfLength,
                 (redAlpha << 24) | 0x00FF5964);
             graphics.pose().popPose();
         }
