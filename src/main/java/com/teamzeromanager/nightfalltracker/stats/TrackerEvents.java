@@ -1,0 +1,29 @@
+package com.teamzeromanager.nightfalltracker.stats;
+
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
+import net.minecraft.world.entity.boss.wither.WitherBoss;
+import net.minecraft.world.entity.monster.ElderGuardian;
+import net.minecraft.world.entity.monster.Warden;
+import net.minecraftforge.event.entity.living.LivingDeathEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
+
+public final class TrackerEvents {
+    private TrackerEvents() {}
+
+    @SubscribeEvent(priority = EventPriority.MONITOR)
+    public static void onLivingDeath(LivingDeathEvent event) {
+        if (event.getEntity().level().isClientSide || !event.getEntity().isPlayer()) return;
+        if (!(event.getEntity().level() instanceof ServerLevel level)) return;
+
+        Entity killer = event.getSource().getEntity();
+        boolean boss = killer instanceof EnderDragon
+            || killer instanceof WitherBoss
+            || killer instanceof Warden
+            || killer instanceof ElderGuardian;
+
+        TrackerSavedData.get(level).recordDeath(boss);
+    }
+}
