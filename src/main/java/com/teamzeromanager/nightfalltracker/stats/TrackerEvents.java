@@ -16,7 +16,10 @@ public final class TrackerEvents {
     private TrackerEvents() {}
 
     private static boolean isBoss(Entity entity) {
-        return entity.getType().is(Tags.EntityTypes.BOSSES) || entity instanceof Warden;
+        return entity.getType().is(Tags.EntityTypes.BOSSES)
+            || entity.getType() == net.minecraft.world.entity.EntityType.ENDER_DRAGON
+            || entity.getType() == net.minecraft.world.entity.EntityType.WITHER
+            || entity.getType() == net.minecraft.world.entity.EntityType.WARDEN;
     }
 
     @SubscribeEvent
