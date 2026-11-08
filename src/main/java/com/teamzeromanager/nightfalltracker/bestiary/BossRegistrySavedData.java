@@ -31,8 +31,11 @@ public class BossRegistrySavedData extends SavedData {
             CompoundTag bossTag = list.getCompound(i);
             ResourceLocation id = ResourceLocation.tryParse(bossTag.getString("Id"));
             if (id != null) {
-                data.bosses.put(id, new BossRecord(id, bossTag.getBoolean("Discovered"),
-                    bossTag.getBoolean("Defeated")));
+                BossRecord record = new BossRecord(id, bossTag.getBoolean("Discovered"),
+                    bossTag.getBoolean("Defeated"));
+                record.manual = bossTag.getBoolean("Manual");
+                record.pendingDefeatAnimation = bossTag.getBoolean("PendingDefeatAnimation");
+                data.bosses.put(id, record);
             }
         }
         return data;
@@ -47,17 +50,43 @@ public class BossRegistrySavedData extends SavedData {
         }
     }
 
-    public void markDefeated(EntityType<?> type) {
+    public void registerManual(EntityType<?> type) {
         ResourceLocation id = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(type);
         BossRecord record = bosses.computeIfAbsent(id, key -> new BossRecord(key, true, false));
-        boolean changed = !record.discovered || !record.defeated;
+        boolean changed = !record.manual || !record.discovered;
+        record.manual = true;
         record.discovered = true;
-        record.defeated = true;
         if (changed) setDirty();
     }
 
-    public BossRecord getRecord(ResourceLocation id) {
-        return bosses.get(id);
+    public void removeManual(ResourceLocation id) {
+        BossRecord record = bosses.get(id);
+        if (record == null || !record.manual) return;
+        record.manual = false;
+        if (!record.discovered && !record.defeated) bosses.remove(id);
+        setDirty();
+    }
+
+    public void markDefeated(EntityType<?> type) {
+        ResourceLocation id = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(type);
+        BossRecord record = bosses.computeIfAbsent(id, key -> new BossRecord(key, true, false));
+        boolean firstDefeat = !record.defeated;
+        boolean changed = !record.discovered || firstDefeat;
+        record.discovered = true;
+        record.defeated = true;
+        if (firstDefeat) record.pendingDefeatAnimation = true;
+        if (changed) setDirty();
+    }
+
+    public ResourceLocation consumePendingDefeatAnimation() {
+        for (BossRecord record : bosses.values()) {
+            if (record.pendingDefeatAnimation) {
+                record.pendingDefeatAnimation = false;
+                setDirty();
+                return record.id;
+            }
+        }
+        return null;
     }
 
     public Map<ResourceLocation, BossRecord> getBosses() {
@@ -72,6 +101,8 @@ public class BossRegistrySavedData extends SavedData {
             bossTag.putString("Id", record.id.toString());
             bossTag.putBoolean("Discovered", record.discovered);
             bossTag.putBoolean("Defeated", record.defeated);
+            bossTag.putBoolean("Manual", record.manual);
+            bossTag.putBoolean("PendingDefeatAnimation", record.pendingDefeatAnimation);
             list.add(bossTag);
         }
         tag.put("Bosses", list);
@@ -82,6 +113,8 @@ public class BossRegistrySavedData extends SavedData {
         private final ResourceLocation id;
         private boolean discovered;
         private boolean defeated;
+        private boolean manual;
+        private boolean pendingDefeatAnimation;
 
         private BossRecord(ResourceLocation id, boolean discovered, boolean defeated) {
             this.id = id;
@@ -92,5 +125,6 @@ public class BossRegistrySavedData extends SavedData {
         public ResourceLocation getId() { return id; }
         public boolean isDiscovered() { return discovered; }
         public boolean isDefeated() { return defeated; }
+        public boolean isManual() { return manual; }
     }
 }
