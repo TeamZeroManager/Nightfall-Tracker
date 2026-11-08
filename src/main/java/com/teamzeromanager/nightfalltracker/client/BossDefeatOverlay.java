@@ -10,14 +10,12 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.Mth;
-import net.minecraft.util.Util;
 import net.minecraft.world.entity.EntityType;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderGuiEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Mod.EventBusSubscriber(modid = NightfallTracker.MOD_ID, value = Dist.CLIENT,
@@ -47,14 +45,14 @@ public final class BossDefeatOverlay {
                 EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.getOptional(pending).orElse(null);
                 if (type != null) {
                     bossName = Component.translatable(type.getDescriptionId()).getString();
-                    startedAt = Util.getMillis();
+                    startedAt = System.currentTimeMillis();
                 }
             }
         }
 
         if (bossName == null) return;
 
-        long elapsed = Util.getMillis() - startedAt;
+        long elapsed = System.currentTimeMillis() - startedAt;
         if (elapsed >= ANIMATION_END) {
             bossName = null;
             return;
@@ -99,7 +97,7 @@ public final class BossDefeatOverlay {
         float progress = Mth.clamp((elapsed - INTRO_END) / (float) (CUT_END - INTRO_END),
             0.0F, 1.0F);
         int length = Math.max(28, textWidth / 2);
-        int[] offsets = {-0.34F, 0.08F, 0.38F, -0.02F};
+        float[] offsets = {-0.34F, 0.08F, 0.38F, -0.02F};
         for (int i = 0; i < offsets.length; i++) {
             float reveal = Mth.clamp(progress * 1.8F - i * 0.22F, 0.0F, 1.0F);
             if (reveal <= 0.0F) continue;
