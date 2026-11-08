@@ -44,7 +44,7 @@ public final class BossCommands {
                     .then(Commands.argument("entity", ResourceLocationArgument.id())
                         .executes(context -> {
                             ResourceLocation id = ResourceLocationArgument.getId(context, "entity");
-                            if (!(context.getSource().getLevel() instanceof ServerLevel level)) return 0;
+                            ServerLevel level = context.getSource().getLevel();
                             BossRegistrySavedData data = BossRegistrySavedData.get(level);
                             BossRegistrySavedData.BossRecord record = data.getBosses().get(id);
                             if (record == null || !record.isManual()) {
