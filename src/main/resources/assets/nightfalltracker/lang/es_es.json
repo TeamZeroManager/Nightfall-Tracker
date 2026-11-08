@@ -1,0 +1,11 @@
+{
+  "key.categories.nightfalltracker": "Nightfall Tracker",
+  "key.nightfalltracker.open_bestiary": "Abrir bestiario de jefes",
+  "screen.nightfalltracker.bestiary": "Bestiario de jefes",
+  "screen.nightfalltracker.bestiary.subtitle": "Registro de las amenazas que has encontrado",
+  "screen.nightfalltracker.bestiary.unknown": "Jefe desconocido",
+  "screen.nightfalltracker.bestiary.undiscovered": "Jefe sin descubrir",
+  "screen.nightfalltracker.bestiary.defeated": "Derrotado",
+  "screen.nightfalltracker.bestiary.pending": "Aún con vida",
+  "screen.nightfalltracker.bestiary.close_hint": "Pulsa ESC para volver a tu mundo"
+}
