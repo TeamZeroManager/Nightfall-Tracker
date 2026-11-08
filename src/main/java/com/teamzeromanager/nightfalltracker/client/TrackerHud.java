@@ -12,6 +12,14 @@ import net.minecraftforge.fml.common.Mod;
 
 @Mod.EventBusSubscriber(modid = NightfallTracker.MOD_ID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class TrackerHud {
+    private static final int PANEL_BG = 0xD9101724;
+    private static final int PANEL_BORDER = 0xFF26394A;
+    private static final int TEXT = 0xFFF1F5F9;
+    private static final int MUTED = 0xFF91A4B7;
+    private static final int CYAN = 0xFF55D6D0;
+    private static final int RED = 0xFFFF7777;
+    private static final int GOLD = 0xFFFFC857;
+
     private TrackerHud() {}
 
     @SubscribeEvent
@@ -30,15 +38,33 @@ public final class TrackerHud {
             bossDeaths = data.getBossDeaths();
         }
 
-        String text = "DAY " + days + "   |   DEATHS " + deaths + "   |   BOSS DEATHS " + bossDeaths;
         GuiGraphics graphics = event.getGuiGraphics();
         int screenWidth = minecraft.getWindow().getGuiScaledWidth();
-        int x = screenWidth - minecraft.font.width(text) - 12;
-        int y = 10;
+        int right = screenWidth - 10;
+        int top = 10;
+        int panelWidth = 246;
+        int panelHeight = 34;
+        int left = right - panelWidth;
 
-        graphics.fill(x - 6, y - 5, screenWidth - 6, y + 14, 0xA0101420);
-        graphics.fill(x - 6, y - 5, x - 4, y + 14, 0xFF39D5C8);
-        graphics.drawString(minecraft.font, text, x + 1, y + 1, 0xC0000000, false);
-        graphics.drawString(minecraft.font, text, x, y, 0xFFF2F2F2, false);
+        // Compact three-section tracker panel.
+        graphics.fill(left, top, right, top + panelHeight, PANEL_BG);
+        graphics.fill(left, top, right, top + 1, PANEL_BORDER);
+        graphics.fill(left, top + panelHeight - 1, right, top + panelHeight, PANEL_BORDER);
+        graphics.fill(left, top, left + 2, top + panelHeight, CYAN);
+
+        drawStat(graphics, minecraft, left + 10, top + 5, "☀", "DAYS", days, GOLD);
+        graphics.fill(left + 82, top + 7, left + 83, top + 27, PANEL_BORDER);
+
+        drawStat(graphics, minecraft, left + 91, top + 5, "☠", "DEATHS", deaths, RED);
+        graphics.fill(left + 164, top + 7, left + 165, top + 27, PANEL_BORDER);
+
+        drawStat(graphics, minecraft, left + 173, top + 5, "⚔", "BOSS", bossDeaths, CYAN);
+    }
+
+    private static void drawStat(GuiGraphics graphics, Minecraft minecraft, int x, int y,
+                                 String icon, String label, long value, int accent) {
+        graphics.drawString(minecraft.font, icon, x, y + 5, accent, false);
+        graphics.drawString(minecraft.font, label, x + 15, y, MUTED, false);
+        graphics.drawString(minecraft.font, Long.toString(value), x + 15, y + 12, TEXT, false);
     }
 }
