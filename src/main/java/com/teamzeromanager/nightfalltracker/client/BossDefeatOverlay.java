@@ -22,10 +22,10 @@ import java.util.List;
 @Mod.EventBusSubscriber(modid = NightfallTracker.MOD_ID, value = Dist.CLIENT,
     bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class BossDefeatOverlay {
-    private static final long INTRO_END = 450L;
-    private static final long CUT_START = 1450L;
-    private static final long SHATTER_START = 1950L;
-    private static final long ANIMATION_END = 5200L;
+    private static final long INTRO_END = 500L;
+    private static final long CUT_START = 1550L;
+    private static final long SHATTER_START = 3000L;
+    private static final long ANIMATION_END = 7600L;
     private static final float NAME_SCALE = 2.0F;
 
     private static final int PANEL = 0xD909111B;
@@ -139,25 +139,33 @@ public final class BossDefeatOverlay {
                                          int centerY, int textWidth, long elapsed) {
         float progress = Mth.clamp((elapsed - CUT_START) /
             (float) (SHATTER_START - CUT_START), 0.0F, 1.0F);
-        int length = Math.max(34, textWidth / 2);
-        float[] offsets = {-0.40F, -0.12F, 0.19F, 0.42F, 0.02F};
+        final int cutCount = 24;
 
         graphics.pose().pushPose();
         graphics.pose().translate(centerX, centerY, 0);
         graphics.pose().scale(NAME_SCALE, NAME_SCALE, 1.0F);
-        for (int i = 0; i < offsets.length; i++) {
-            float reveal = Mth.clamp(progress * 1.9F - i * 0.16F, 0.0F, 1.0F);
+
+        // A fast sequence of 24 crossing sword cuts travels across the full name.
+        for (int i = 0; i < cutCount; i++) {
+            float reveal = Mth.clamp(progress * (cutCount + 5.0F) - i, 0.0F, 1.0F);
             if (reveal <= 0.0F) continue;
 
-            int x = (int) (offsets[i] * textWidth);
-            int y = (i - 2) * 2;
+            float position = (i + 0.5F) / cutCount;
+            float x = -textWidth / 2.0F + position * textWidth;
+            float y = ((i % 5) - 2) * 2.2F;
+            float angle = (i % 2 == 0 ? -1.0F : 1.0F) * (48.0F + (i % 4) * 9.0F);
+            float length = 25.0F + (i % 6) * 4.0F;
+            float slashProgress = Mth.clamp(reveal * 1.8F, 0.0F, 1.0F);
+
             graphics.pose().pushPose();
             graphics.pose().translate(x, y, 0);
-            graphics.pose().mulPose(Axis.ZP.rotationDegrees(-42.0F + i * 8.0F));
-            graphics.fill(-1, -length / 2, 2, length / 2,
-                ((int) (245 * reveal) << 24) | 0x00FFFFFF);
-            graphics.fill(2, -length / 2, 5, length / 2,
-                ((int) (210 * reveal) << 24) | 0x00FF5964);
+            graphics.pose().mulPose(Axis.ZP.rotationDegrees(angle));
+            int whiteAlpha = (int) (245 * slashProgress);
+            int redAlpha = (int) (205 * slashProgress);
+            graphics.fill(-1, -length / 2.0F > Integer.MAX_VALUE ? 0 : (int) (-length / 2.0F),
+                2, (int) (length / 2.0F), (whiteAlpha << 24) | 0x00FFFFFF);
+            graphics.fill(2, (int) (-length / 2.0F), 5, (int) (length / 2.0F),
+                (redAlpha << 24) | 0x00FF5964);
             graphics.pose().popPose();
         }
         graphics.pose().popPose();
@@ -168,7 +176,7 @@ public final class BossDefeatOverlay {
         float progress = Mth.clamp((elapsed - SHATTER_START) /
             (float) (ANIMATION_END - SHATTER_START), 0.0F, 1.0F);
         float travel = 1.0F - (1.0F - progress) * (1.0F - progress);
-        int groupSize = 2;
+        int groupSize = 1;
         List<String> fragments = new ArrayList<>();
         for (int start = 0; start < bossName.length(); start += groupSize) {
             fragments.add(bossName.substring(start,
@@ -189,11 +197,11 @@ public final class BossDefeatOverlay {
             int fragmentWidth = minecraft.font.width(fragment);
             float direction = (i % 2 == 0) ? -1.0F : 1.0F;
             float side = i - (fragments.size() - 1) / 2.0F;
-            float dx = direction * (24.0F + (i % 4) * 13.0F) * travel
-                + side * 5.0F * travel;
-            float lift = ((i % 3) - 1) * 18.0F * travel;
-            float dy = lift + 112.0F * travel * travel;
-            float rotation = direction * (28.0F + (i % 5) * 17.0F) * travel;
+            float dx = direction * (34.0F + (i % 5) * 17.0F) * travel
+                + side * 8.0F * travel;
+            float lift = ((i % 5) - 2) * 24.0F * travel;
+            float dy = lift + 155.0F * travel * travel;
+            float rotation = direction * (55.0F + (i % 7) * 24.0F) * travel;
             float fade = Mth.clamp((progress - 0.62F) / 0.38F, 0.0F, 1.0F);
             int alpha = 255 - (int) (255.0F * fade);
             int color = (alpha << 24) | 0x00F4F7FA;
