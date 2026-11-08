@@ -1,0 +1,11 @@
+{
+  "key.categories.nightfalltracker": "Nightfall Tracker",
+  "key.nightfalltracker.open_bestiary": "Open Boss Bestiary",
+  "screen.nightfalltracker.bestiary": "Boss Bestiary",
+  "screen.nightfalltracker.bestiary.subtitle": "A record of the threats you have encountered",
+  "screen.nightfalltracker.bestiary.unknown": "Unknown boss",
+  "screen.nightfalltracker.bestiary.undiscovered": "Undiscovered",
+  "screen.nightfalltracker.bestiary.defeated": "Defeated",
+  "screen.nightfalltracker.bestiary.pending": "Still alive",
+  "screen.nightfalltracker.bestiary.close_hint": "Press ESC to return to your world"
+}
