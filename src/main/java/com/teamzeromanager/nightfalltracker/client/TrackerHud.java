@@ -7,6 +7,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderGuiOverlayEvent;
+import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
@@ -16,6 +17,8 @@ public final class TrackerHud {
 
     @SubscribeEvent
     public static void onHudRender(RenderGuiOverlayEvent.Post event) {
+        if (!event.getOverlay().id().equals(VanillaGuiOverlay.HOTBAR.id())) return;
+
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == null || minecraft.level == null || minecraft.options.hideGui) return;
 
@@ -28,17 +31,12 @@ public final class TrackerHud {
             TrackerSavedData data = TrackerSavedData.get(overworld);
             deaths = data.getTotalDeaths();
             bossDeaths = data.getBossDeaths();
-        } else {
-            // Multiplayer statistics are synchronized by the server in a later networking pass.
-            deaths = minecraft.player.getPersistentData().getLong("NightfallDeaths");
-            bossDeaths = minecraft.player.getPersistentData().getLong("NightfallBossDeaths");
         }
 
         String text = "DAY " + days + "   |   DEATHS " + deaths + "   |   BOSS DEATHS " + bossDeaths;
         GuiGraphics graphics = event.getGuiGraphics();
-        int width = minecraft.getWindow().getGuiScaledWidth();
-        int textWidth = minecraft.font.width(text);
-        int x = width - textWidth - 12;
+        int screenWidth = minecraft.getWindow().getGuiScaledWidth();
+        int x = screenWidth - minecraft.font.width(text) - 12;
         int y = 10;
 
         graphics.drawString(minecraft.font, text, x + 1, y + 1, 0xA0000000, false);
