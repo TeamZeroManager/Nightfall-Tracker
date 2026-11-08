@@ -14,8 +14,6 @@ import java.util.Map;
 
 public class BossRegistrySavedData extends SavedData {
     private static final String DATA_NAME = "nightfall_tracker_bestiary";
-    // Temporary testing switch: set to false after the animation has been approved.
-    private static final boolean ANIMATE_EVERY_DEFEAT_FOR_TESTING = true;
     private final Map<ResourceLocation, BossRecord> bosses = new LinkedHashMap<>();
 
     public static BossRegistrySavedData get(ServerLevel level) {
@@ -36,7 +34,6 @@ public class BossRegistrySavedData extends SavedData {
                 BossRecord record = new BossRecord(id, bossTag.getBoolean("Discovered"),
                     bossTag.getBoolean("Defeated"));
                 record.manual = bossTag.getBoolean("Manual");
-                record.pendingDefeatAnimation = bossTag.getBoolean("PendingDefeatAnimation");
                 data.bosses.put(id, record);
             }
         }
@@ -72,16 +69,9 @@ public class BossRegistrySavedData extends SavedData {
     public void markDefeated(EntityType<?> type) {
         ResourceLocation id = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(type);
         BossRecord record = bosses.computeIfAbsent(id, key -> new BossRecord(key, true, false));
-        boolean firstDefeat = !record.defeated;
-        boolean changed = !record.discovered || firstDefeat;
+        boolean changed = !record.discovered || !record.defeated;
         record.discovered = true;
         record.defeated = true;
-
-        boolean shouldAnimate = firstDefeat || ANIMATE_EVERY_DEFEAT_FOR_TESTING;
-        if (shouldAnimate && !record.pendingDefeatAnimation) {
-            record.pendingDefeatAnimation = true;
-            changed = true;
-        }
         if (changed) setDirty();
     }
 
@@ -109,7 +99,6 @@ public class BossRegistrySavedData extends SavedData {
             bossTag.putBoolean("Discovered", record.discovered);
             bossTag.putBoolean("Defeated", record.defeated);
             bossTag.putBoolean("Manual", record.manual);
-            bossTag.putBoolean("PendingDefeatAnimation", record.pendingDefeatAnimation);
             list.add(bossTag);
         }
         tag.put("Bosses", list);
@@ -121,7 +110,6 @@ public class BossRegistrySavedData extends SavedData {
         private boolean discovered;
         private boolean defeated;
         private boolean manual;
-        private boolean pendingDefeatAnimation;
 
         private BossRecord(ResourceLocation id, boolean discovered, boolean defeated) {
             this.id = id;
