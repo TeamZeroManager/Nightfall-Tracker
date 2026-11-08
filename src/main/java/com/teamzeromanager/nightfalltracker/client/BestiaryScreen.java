@@ -62,7 +62,10 @@ public class BestiaryScreen extends Screen {
     private void refreshData() {
         Set<ResourceLocation> ids = new LinkedHashSet<>();
         for (EntityType<?> type : BuiltInRegistries.ENTITY_TYPE) {
-            if (type.is(Tags.EntityTypes.BOSSES) || type == EntityType.WARDEN) {
+            if (type.is(Tags.EntityTypes.BOSSES)
+                || type == EntityType.ENDER_DRAGON
+                || type == EntityType.WITHER
+                || type == EntityType.WARDEN) {
                 ids.add(BuiltInRegistries.ENTITY_TYPE.getKey(type));
             }
         }
