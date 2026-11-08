@@ -34,7 +34,7 @@ public final class BossCommands {
                             }
                             Object value = optional.get();
                             if (!(value instanceof net.minecraft.world.entity.EntityType<?> type)) return 0;
-                            if (!(context.getSource().getLevel() instanceof ServerLevel level)) return 0;
+                            ServerLevel level = context.getSource().getLevel();
                             BossRegistrySavedData.get(level).registerManual(type);
                             context.getSource().sendSuccess(() -> Component.literal(
                                 "Jefe añadido al Bestiario: " + id), true);
