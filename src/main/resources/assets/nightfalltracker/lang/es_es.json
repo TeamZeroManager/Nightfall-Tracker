@@ -3,9 +3,17 @@
   "key.nightfalltracker.open_bestiary": "Abrir bestiario de jefes",
   "screen.nightfalltracker.bestiary": "Bestiario de jefes",
   "screen.nightfalltracker.bestiary.subtitle": "Registro de las amenazas que has encontrado",
+  "screen.nightfalltracker.bestiary.catalog": "CATÁLOGO",
   "screen.nightfalltracker.bestiary.unknown": "Jefe desconocido",
-  "screen.nightfalltracker.bestiary.undiscovered": "Jefe sin descubrir",
+  "screen.nightfalltracker.bestiary.undiscovered": "Sin descubrir",
   "screen.nightfalltracker.bestiary.defeated": "Derrotado",
   "screen.nightfalltracker.bestiary.pending": "Aún con vida",
+  "screen.nightfalltracker.bestiary.status": "ESTADO",
+  "screen.nightfalltracker.bestiary.mod_source": "MOD DE ORIGEN",
+  "screen.nightfalltracker.bestiary.entity_id": "IDENTIFICADOR",
+  "screen.nightfalltracker.bestiary.manual": "Registro manual",
+  "screen.nightfalltracker.bestiary.automatic": "Detección automática",
+  "screen.nightfalltracker.bestiary.manual_hint": "Añadido mediante comando",
+  "screen.nightfalltracker.bestiary.empty": "Selecciona un jefe del catálogo",
   "screen.nightfalltracker.bestiary.close_hint": "Pulsa ESC para volver a tu mundo"
 }
