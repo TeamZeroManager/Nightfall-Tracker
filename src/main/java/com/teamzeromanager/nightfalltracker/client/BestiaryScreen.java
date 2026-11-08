@@ -8,7 +8,6 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.EntityType;
 import net.minecraftforge.common.Tags;
 
@@ -34,9 +33,6 @@ public class BestiaryScreen extends Screen {
     private Map<ResourceLocation, BossRegistrySavedData.BossRecord> records = Map.of();
     private ResourceLocation selectedId;
     private int scrollOffset;
-    private int slashTicks = 24;
-    private ResourceLocation animatedDefeatId;
-
     public BestiaryScreen() {
         super(Component.translatable("screen.nightfalltracker.bestiary"));
     }
@@ -44,16 +40,6 @@ public class BestiaryScreen extends Screen {
     @Override
     protected void init() {
         refreshData();
-        MinecraftServer server = minecraft == null ? null : minecraft.getSingleplayerServer();
-        if (server != null) {
-            ResourceLocation pending = BossRegistrySavedData.get(server.overworld())
-                .consumePendingDefeatAnimation();
-            if (pending != null) {
-                selectedId = pending;
-                animatedDefeatId = pending;
-                slashTicks = 0;
-            }
-        }
         if (selectedId == null && !bossTypes.isEmpty()) {
             selectedId = BuiltInRegistries.ENTITY_TYPE.getKey(bossTypes.get(0));
         }
@@ -86,12 +72,6 @@ public class BestiaryScreen extends Screen {
         found.sort(Comparator.comparing(type ->
             BuiltInRegistries.ENTITY_TYPE.getKey(type).toString()));
         bossTypes = found;
-    }
-
-    @Override
-    public void tick() {
-        super.tick();
-        if (slashTicks < 24) slashTicks++;
     }
 
     @Override
@@ -185,16 +165,6 @@ public class BestiaryScreen extends Screen {
             int nameY = detailTop + 16;
             graphics.drawString(font, trim(displayName, 34), nameX, nameY, WHITE, false);
 
-            if (selectedId.equals(animatedDefeatId) && slashTicks < 24) {
-                float progressAnim = Math.min(1.0F, slashTicks / 18.0F);
-                int slashX = nameX + (int) (progressAnim * Math.max(30, font.width(displayName) + 12));
-                for (int i = 0; i < 5; i++) {
-                    int segmentX = slashX - i * 5;
-                    int segmentY = nameY + 10 + i * 2;
-                    graphics.fill(segmentX, segmentY, segmentX + 13, segmentY + 2, RED);
-                }
-            }
-
             int y = detailTop + 43;
             graphics.drawString(font,
                 Component.translatable("screen.nightfalltracker.bestiary.status"),
@@ -268,7 +238,6 @@ public class BestiaryScreen extends Screen {
                 int index = (int) ((mouseY - rowsTop + scrollOffset) / 24);
                 if (index >= 0 && index < bossTypes.size()) {
                     selectedId = BuiltInRegistries.ENTITY_TYPE.getKey(bossTypes.get(index));
-                    animatedDefeatId = null;
                     return true;
                 }
             }
