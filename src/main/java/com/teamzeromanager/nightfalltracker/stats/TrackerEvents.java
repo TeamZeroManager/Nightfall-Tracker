@@ -5,7 +5,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.world.entity.boss.wither.WitherBoss;
-import net.minecraft.world.entity.monster.Warden;
+import net.minecraft.world.entity.monster.warden.Warden;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -13,7 +13,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 public final class TrackerEvents {
     private TrackerEvents() {}
 
-    @SubscribeEvent(priority = EventPriority.MONITOR)
+    @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onLivingDeath(LivingDeathEvent event) {
         if (!(event.getEntity() instanceof Player) || event.getEntity().level().isClientSide) return;
         if (!(event.getEntity().level() instanceof ServerLevel level)) return;
