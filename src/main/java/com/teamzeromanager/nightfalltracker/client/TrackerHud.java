@@ -6,8 +6,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RenderGuiOverlayEvent;
-import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
+import net.minecraftforge.client.event.RenderGuiEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
@@ -16,9 +15,7 @@ public final class TrackerHud {
     private TrackerHud() {}
 
     @SubscribeEvent
-    public static void onHudRender(RenderGuiOverlayEvent.Post event) {
-        if (!event.getOverlay().id().equals(VanillaGuiOverlay.HOTBAR.id())) return;
-
+    public static void onGuiRender(RenderGuiEvent.Post event) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == null || minecraft.level == null || minecraft.options.hideGui) return;
 
@@ -39,7 +36,9 @@ public final class TrackerHud {
         int x = screenWidth - minecraft.font.width(text) - 12;
         int y = 10;
 
-        graphics.drawString(minecraft.font, text, x + 1, y + 1, 0xA0000000, false);
-        graphics.drawString(minecraft.font, text, x, y, 0xF2F2F2, false);
+        graphics.fill(x - 6, y - 5, screenWidth - 6, y + 14, 0xA0101420);
+        graphics.fill(x - 6, y - 5, x - 4, y + 14, 0xFF39D5C8);
+        graphics.drawString(minecraft.font, text, x + 1, y + 1, 0xC0000000, false);
+        graphics.drawString(minecraft.font, text, x, y, 0xFFF2F2F2, false);
     }
 }
