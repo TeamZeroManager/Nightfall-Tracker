@@ -11,6 +11,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderGuiEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -39,6 +40,8 @@ public final class BossDefeatOverlay {
 
     private static String bossName;
     private static long startedAt;
+    private static int lastSoundedCut = -1;
+    private static int lastImpactCut = -1;
 
     private BossDefeatOverlay() {}
 
@@ -58,6 +61,8 @@ public final class BossDefeatOverlay {
                 if (type != null) {
                     bossName = Component.translatable(type.getDescriptionId()).getString();
                     startedAt = System.currentTimeMillis();
+                    lastSoundedCut = -1;
+                    lastImpactCut = -1;
                 }
             }
         }
@@ -138,7 +143,10 @@ public final class BossDefeatOverlay {
                                           int centerX, int baseline, long elapsed) {
         int textWidth = minecraft.font.width(bossName);
         int left = centerX - textWidth / 2;
-        int cutCount = Mth.clamp(textWidth / 3, 8, 18);
+        final int sliceCount = 4;
+        final int cutCount = sliceCount - 1;
+        final int sliceHeight = 3;
+
         float sequenceProgress = Mth.clamp((elapsed - CUT_START) /
             (float) CUT_SEQUENCE_DURATION, 0.0F, 1.0F);
         float cutPosition = sequenceProgress * cutCount;
@@ -146,67 +154,73 @@ public final class BossDefeatOverlay {
         int activeCut = Math.min(completedCuts, cutCount - 1);
         float activeProgress = cutPosition - completedCuts;
 
-        graphics.pose().pushPose();
-        graphics.pose().translate(centerX, baseline + 5, 0);
-        graphics.pose().scale(NAME_SCALE, NAME_SCALE, 1.0F);
-        graphics.pose().translate(-centerX, -(baseline + 5), 0);
+        // Each horizontal strip is clipped from the actual rendered word.
+        // The glyphs themselves are therefore split into independent pieces,
+        // rather than being replaced by detached whole characters.
+        for (int slice = 0; slice < sliceCount; slice++) {
+            int cutsBeforeSlice = Math.min(slice, completedCuts);
+            float separation = (cutsBeforeSlice - completedCuts / 2.0F) * 3.2F;
+            float driftX = (slice % 2 == 0 ? -1.0F : 1.0F)
+                * cutsBeforeSlice * 1.1F;
+            float driftY = separation;
 
-        // Draw each glyph separately. Every completed cut pushes the pieces
-        // on its left and right apart, leaving a real gap in the word.
-        int cursor = 0;
-        for (int i = 0; i < bossName.length(); i++) {
-            String glyph = bossName.substring(i, i + 1);
-            int glyphWidth = minecraft.font.width(glyph);
-            float glyphCenter = cursor + glyphWidth / 2.0F;
-            int cutsBeforeGlyph = 0;
-            for (int cut = 0; cut < completedCuts; cut++) {
-                float boundary = (cut + 1.0F) * textWidth / (cutCount + 1.0F);
-                if (glyphCenter > boundary) cutsBeforeGlyph++;
-            }
-
-            float separation = (cutsBeforeGlyph - completedCuts / 2.0F) * 2.0F;
-            graphics.drawString(minecraft.font, glyph, (int) (left + cursor + separation),
-                baseline, 0xFFF4F7FA, true);
-            cursor += glyphWidth;
-        }
-
-        // Completed sword cuts remain as dark, narrow diagonal openings.
-        for (int cut = 0; cut < completedCuts; cut++) {
-            float x = -textWidth / 2.0F + (cut + 1.0F) * textWidth / (cutCount + 1.0F);
-            float angle = (cut % 2 == 0 ? -1.0F : 1.0F) * (52.0F + (cut % 3) * 8.0F);
             graphics.pose().pushPose();
-            graphics.pose().translate(x, 0, 0);
-            graphics.pose().mulPose(Axis.ZP.rotationDegrees(angle));
-            graphics.fill(-2, -13, 2, 13, 0xEE101820);
-            graphics.fill(-1, -12, 0, 12, 0xFFFF5964);
+            graphics.pose().translate(centerX, baseline + 5, 0);
+            graphics.pose().scale(NAME_SCALE, NAME_SCALE, 1.0F);
+            graphics.pose().translate(-centerX, -(baseline + 5), 0);
+            graphics.pose().translate(driftX / NAME_SCALE, driftY / NAME_SCALE, 0);
+
+            graphics.enableScissor(left, baseline + slice * sliceHeight,
+                left + textWidth, baseline + (slice + 1) * sliceHeight);
+            graphics.drawCenteredString(minecraft.font, bossName, centerX, baseline,
+                WHITE);
+            graphics.disableScissor();
             graphics.pose().popPose();
         }
 
-        // Only one blade stroke is active at a time: it sweeps through the
-        // letters, flashes on impact, and then becomes the next persistent cut.
+        // Play one katana-like sweep per cut and a sharper impact at contact.
+        if (completedCuts < cutCount && activeCut != lastSoundedCut) {
+            float pitch = 0.82F + activeCut * 0.09F;
+            minecraft.player.playSound(SoundEvents.PLAYER_ATTACK_SWEEP, 0.85F, pitch);
+            lastSoundedCut = activeCut;
+        }
+        if (completedCuts < cutCount && activeProgress >= 0.82F
+            && activeCut != lastImpactCut) {
+            minecraft.player.playSound(SoundEvents.PLAYER_ATTACK_CRIT, 0.65F,
+                0.92F + activeCut * 0.06F);
+            lastImpactCut = activeCut;
+        }
+
+        // The active blade travels across the word on the next cut line.
         if (completedCuts < cutCount) {
-            float x = -textWidth / 2.0F
-                + (activeCut + 1.0F) * textWidth / (cutCount + 1.0F);
             float sweep = Mth.clamp(activeProgress, 0.0F, 1.0F);
-            float angle = (activeCut % 2 == 0 ? -1.0F : 1.0F)
-                * (72.0F - 144.0F * sweep);
+            float bladeX = -textWidth / 2.0F + textWidth * sweep;
+            float bladeY = -5.0F + (activeCut + 1) * sliceHeight;
             graphics.pose().pushPose();
-            graphics.pose().translate(x, 0, 0);
-            graphics.pose().mulPose(Axis.ZP.rotationDegrees(angle));
-            int glowAlpha = (int) (150 + 105 * (float) Math.sin(sweep * Math.PI));
-            graphics.fill(-4, -17, 4, 17, (glowAlpha << 24) | 0x00FF354F);
-            graphics.fill(-1, -16, 1, 16, 0xFFFFFFFF);
-            graphics.fill(2, -12, 4, 12, 0xFFFF5964);
+            graphics.pose().translate(centerX + bladeX, baseline + bladeY, 0);
+            graphics.pose().mulPose(Axis.ZP.rotationDegrees(
+                (activeCut % 2 == 0) ? -16.0F : 16.0F));
+            int glowAlpha = (int) (135 + 120 * Math.sin(sweep * Math.PI));
+            graphics.fill(-3, -18, 3, 18, (glowAlpha << 24) | 0x00FF344F);
+            graphics.fill(-1, -17, 1, 17, 0xFFFFFFFF);
+            graphics.fill(2, -14, 4, 14, 0xFFFF5964);
             graphics.pose().popPose();
 
-            // Small impact sparks make the blade contact easier to read.
-            int sparkAlpha = (int) (180 * (1.0F - Math.abs(0.5F - sweep) * 2.0F));
-            int sparkColor = (sparkAlpha << 24) | 0x00FFE7A3;
-            graphics.fill((int) (x - 7), -8, (int) (x - 4), -5, sparkColor);
-            graphics.fill((int) (x + 5), 5, (int) (x + 8), 8, sparkColor);
+            int sparkAlpha = (int) (210 * (1.0F - Math.abs(0.5F - sweep) * 2.0F));
+            int spark = (sparkAlpha << 24) | 0x00FFE7A3;
+            graphics.fill((int) (centerX + bladeX - 7), (int) (baseline + bladeY - 3),
+                (int) (centerX + bladeX - 3), (int) (baseline + bladeY + 1), spark);
+            graphics.fill((int) (centerX + bladeX + 3), (int) (baseline + bladeY + 2),
+                (int) (centerX + bladeX + 7), (int) (baseline + bladeY + 6), spark);
         }
 
-        graphics.pose().popPose();
+        // Brief red seams remain where the letters have already been sliced.
+        for (int cut = 0; cut < completedCuts; cut++) {
+            int seamY = baseline - 5 + (cut + 1) * sliceHeight * 2;
+            graphics.fill(left - 2, seamY, left + textWidth * 2 + 2, seamY + 1,
+                0xCCFF5964);
+        }
+
         graphics.drawCenteredString(minecraft.font, "BOSS DEFEATED",
             centerX, baseline - 27, MUTED);
     }
