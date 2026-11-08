@@ -162,7 +162,7 @@ public final class BossDefeatOverlay {
             }
 
             float separation = (cutsBeforeGlyph - completedCuts / 2.0F) * 2.0F;
-            graphics.drawString(minecraft.font, glyph, left + cursor + separation,
+            graphics.drawString(minecraft.font, glyph, (int) (left + cursor + separation),
                 baseline, 0xFFF4F7FA, true);
             cursor += glyphWidth;
         }
